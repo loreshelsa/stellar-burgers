@@ -2,8 +2,6 @@ import { FC, useEffect, useMemo, useState } from 'react';
 import { TConstructorIngredient, TIngredient } from '@utils-types';
 import { BurgerConstructorUI } from '@ui';
 import {
-  getBunsSelector,
-  getIngredientsSelector,
   getLoadingNewOrderSelector,
   getNewOrderBurgerSelector,
   orderBurger,
@@ -12,6 +10,10 @@ import {
 import { useDispatch, useSelector } from '../../services/store';
 import { useNavigate } from 'react-router-dom';
 import { authenticatedSelector } from '../../slices/authReducer';
+import {
+  getBunsSelector,
+  getIngredientsSelector
+} from '../../slices/constructorReducer';
 
 export const BurgerConstructor: FC = () => {
   const dispatch = useDispatch();
@@ -28,18 +30,16 @@ export const BurgerConstructor: FC = () => {
   });
 
   useEffect(() => {
-    if (orderedIngredients.length > 0 || bun) {
-      const ingredients = orderedIngredients.filter(
-        (item) => item.type !== 'bun'
-      );
+    const ingredients = orderedIngredients.filter(
+      (item) => item.type !== 'bun'
+    );
 
-      setConstructorItems({
-        bun: bun || {
-          price: 0
-        },
-        ingredients: ingredients as []
-      });
-    }
+    setConstructorItems({
+      bun: bun || {
+        price: 0
+      },
+      ingredients: ingredients as []
+    });
   }, [orderedIngredients, bun]);
 
   const orderRequest = useSelector(getLoadingNewOrderSelector);
@@ -58,7 +58,7 @@ export const BurgerConstructor: FC = () => {
   };
   const closeOrderModal = () => {
     dispatch(reset());
-    navigate('/feed');
+    navigate('/');
   };
 
   const price = useMemo(

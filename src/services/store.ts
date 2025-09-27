@@ -10,12 +10,14 @@ import {
 } from 'react-redux';
 import { orderReducer } from '../slices/orderReducer';
 import { feedReducer } from '../slices/feedReducer';
+import { constructorReducer } from '../slices/constructorReducer';
 
 const rootReducer = combineReducers({
   auth: authReducer,
   ingredient: ingredientReducer,
   order: orderReducer,
-  feed: feedReducer
+  feed: feedReducer,
+  burgerConstructor: constructorReducer
 });
 
 export const store = configureStore({

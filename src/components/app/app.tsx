@@ -67,7 +67,6 @@ const App = () => {
             </ProtectedRoute>
           }
         />
-
         <Route element={<ProtectedRoute />}>
           <Route path='/profile'>
             <Route index element={<Profile />} />
@@ -96,7 +95,7 @@ const App = () => {
             path='/ingredients/:id'
             element={
               <Modal
-                title={'Детали ингредиента'}
+                title=''
                 onClose={() => {
                   navigate('/');
                 }}

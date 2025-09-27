@@ -153,7 +153,7 @@ const authSlice = createSlice({
       })
       .addCase(checkUserAuth.fulfilled, (state, action) => {
         state.checkUserAuthSending = false;
-        state.isAuthenticated = true;
+        state.isAuthenticated = !!action.payload?.user;
         state.user = action.payload?.user || null;
       })
       .addCase(updateUser.pending, (state) => {
