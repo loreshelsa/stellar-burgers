@@ -6,6 +6,11 @@
   text-align: center;
 }
 
+.header_number {
+  font-family: 'Iceland';
+  text-align: center;
+}
+
 .status {
   color: #00cccc;
 }
