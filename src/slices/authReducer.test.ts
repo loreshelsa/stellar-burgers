@@ -18,6 +18,15 @@ import {
   sendErrorSelector,
   authSelector
 } from '../slices/authReducer';
+import {
+  initialStateAuth,
+  loginData,
+  mockErrorData,
+  mockLoginData,
+  mockRegisterData,
+  mockUpdateData,
+  user
+} from '../utils/mockData';
 
 jest.mock('@api', () => ({
   loginUserApi: jest.fn(),
@@ -29,55 +38,10 @@ jest.mock('../utils/cookie', () => ({
   getCookie: jest.fn()
 }));
 
-const initialState = {
-  form: {
-    email: '',
-    password: ''
-  },
-  registerForm: {
-    email: '',
-    password: '',
-    name: ''
-  },
-  updateForm: {
-    email: '',
-    password: '',
-    name: ''
-  },
-  error: null,
-  sending: false,
-  registerError: null,
-  registerSending: false,
-  isAuthenticated: false,
-  isAuthChecked: false,
-  user: null,
-  checkUserAuthSending: false,
-  checkUserAuthError: null,
-  updateUserError: null,
-  updateUserSending: false
-};
-
-const loginData = {
-  form: {
-    email: 'test@yandex.ru',
-    password: '123456'
-  },
-  registerForm: {
-    email: 'test@yandex.ru',
-    password: '123456',
-    name: 'elza'
-  },
-  updateForm: {
-    email: 'test2@yandex.ru',
-    password: '123456789',
-    name: 'elzaTest'
-  }
-};
-
 describe('проверяем authSlice', () => {
   it('должен возвращать дефолтное состояние при инициализации', () => {
     const result = authReducer(undefined, { type: '' });
-    expect(result).toEqual(initialState);
+    expect(result).toEqual(initialStateAuth);
   });
   it('email должен быть заполнен в форме логин', () => {
     const mockData = {
@@ -85,10 +49,10 @@ describe('проверяем authSlice', () => {
       value: 'test@yandex.ru'
     };
     const action = { type: setFormValue.type, payload: mockData };
-    const result = authReducer(initialState, action);
+    const result = authReducer(initialStateAuth, action);
     expect(result.form).toEqual({
       email: mockData.value,
-      password: initialState.form.password
+      password: initialStateAuth.form.password
     });
   });
 
@@ -98,23 +62,23 @@ describe('проверяем authSlice', () => {
       value: 'test'
     };
     const action = { type: setRegisterFormValue.type, payload: mockData };
-    const result = authReducer(initialState, action);
+    const result = authReducer(initialStateAuth, action);
     expect(result.registerForm).toEqual({
       password: mockData.value,
-      email: initialState.registerForm.email,
-      name: initialState.registerForm.name
+      email: initialStateAuth.registerForm.email,
+      name: initialStateAuth.registerForm.name
     });
   });
 
   it('проверка пользователь существует authChecked', () => {
     const action = authChecked();
-    const result = authReducer(initialState, action);
+    const result = authReducer(initialStateAuth, action);
     expect(result.isAuthChecked).toBe(true);
   });
 
   it('сброс данных user и isAuthenticated в исходное значение', () => {
     const prevState = {
-      ...initialState,
+      ...initialStateAuth,
       user: { email: 'test@test.com', name: 'Test' },
       isAuthenticated: true
     };
@@ -122,7 +86,7 @@ describe('проверяем authSlice', () => {
     const result = authReducer(prevState, action);
     expect(result.user).toBeNull();
     expect(result.isAuthenticated).toBe(false);
-    expect(result.form).toEqual(initialState.form);
+    expect(result.form).toEqual(initialStateAuth.form);
   });
 });
 
@@ -131,7 +95,7 @@ describe('проверяем thunk функцию запрос login', () => {
     jest.clearAllMocks();
   });
   it('запрос должен быть с отклоненным ответом', async () => {
-    (loginUserApi as jest.Mock).mockRejectedValue(new Error('Ошибка запроса'));
+    (loginUserApi as jest.Mock).mockRejectedValue(mockErrorData);
 
     const dispatch = jest.fn();
     const getState = jest.fn();
@@ -147,49 +111,30 @@ describe('проверяем thunk функцию запрос login', () => {
   });
 
   it('статус загрузки должен изменяться в начале выполнения запроса', async () => {
-    const arg = { email: 'test@yandex.ru', password: '123456', name: 'elza' };
     const state = authReducer(
-      initialState,
-      login.pending('testRequestId', arg)
+      initialStateAuth,
+      login.pending('testRequestId', user)
     );
     expect(state.sending).toBe(true);
     expect(state.error).toBeNull();
   });
   it('сообщение об ошибке должены быть записаны в стейт после выполнения запроса', async () => {
-    const mockData = new Error('Ошибка запроса');
-    const arg = { email: 'test@yandex.ru', password: '123456', name: 'elza' };
-
     const state = authReducer(
-      initialState,
-      login.rejected(mockData, 'testRequestId', arg)
+      initialStateAuth,
+      login.rejected(mockErrorData, 'testRequestId', user)
     );
     expect(state.sending).toBe(false);
-    expect(state.error).toBe(mockData.message);
+    expect(state.error).toBe(mockErrorData.message);
   });
   it('данные должены быть записаны в стейт после выполнения запроса', async () => {
-    const mockData = {
-      success: true,
-      form: {
-        email: 'test@yandex.ru',
-        password: '123456'
-      },
-      refreshToken: 'refreshToken',
-      accessToken: 'accessToken',
-      user: {
-        email: 'test@yandex.ru',
-        password: '123456',
-        name: 'elza'
-      }
-    };
-
     const state = authReducer(
-      initialState,
-      login.fulfilled(mockData, 'testRequestId', mockData.form)
+      initialStateAuth,
+      login.fulfilled(mockLoginData, 'testRequestId', mockLoginData.form)
     );
     expect(state.sending).toBe(false);
     expect(state.isAuthenticated).toBe(true);
     expect(state.isAuthChecked).toBe(true);
-    expect(state.user).toEqual(mockData.user);
+    expect(state.user).toEqual(mockLoginData.user);
   });
 });
 
@@ -198,9 +143,7 @@ describe('проверяем thunk функцию запрос register', () => 
     jest.clearAllMocks();
   });
   it('запрос должен быть с отклоненным ответом', async () => {
-    (registerUserApi as jest.Mock).mockRejectedValue(
-      new Error('Ошибка запроса')
-    );
+    (registerUserApi as jest.Mock).mockRejectedValue(mockErrorData);
 
     const dispatch = jest.fn();
     const getState = jest.fn();
@@ -216,139 +159,89 @@ describe('проверяем thunk функцию запрос register', () => 
   });
 
   it('статус загрузки должен изменяться в начале выполнения запроса register', async () => {
-    const arg = { email: 'test@yandex.ru', password: '123456', name: 'elza' };
     const state = authReducer(
-      initialState,
-      register.pending('testRequestId', arg)
+      initialStateAuth,
+      register.pending('testRequestId', user)
     );
     expect(state.registerSending).toBe(true);
     expect(state.registerError).toBeNull();
   });
   it('сообщение об ошибке должены быть записаны в стейт после выполнения запроса register', async () => {
-    const mockData = new Error('Ошибка запроса');
-    const arg = { email: 'test@yandex.ru', password: '123456', name: 'elza' };
-
     const state = authReducer(
-      initialState,
-      register.rejected(mockData, 'testRequestId', arg)
+      initialStateAuth,
+      register.rejected(mockErrorData, 'testRequestId', user)
     );
     expect(state.registerSending).toBe(false);
-    expect(state.registerError).toBe(mockData.message);
+    expect(state.registerError).toBe(mockErrorData.message);
   });
   it('данные должены быть записаны в стейт после выполнения запроса register', async () => {
-    const mockData = {
-      success: true,
-      registerForm: {
-        email: 'test@yandex.ru',
-        password: '123456',
-        name: 'elza'
-      },
-      refreshToken: 'refreshToken',
-      accessToken: 'accessToken',
-      user: {
-        email: 'test@yandex.ru',
-        password: '123456',
-        name: 'elza'
-      }
-    };
-
     const state = authReducer(
-      initialState,
-      register.fulfilled(mockData, 'testRequestId', mockData.registerForm)
+      initialStateAuth,
+      register.fulfilled(
+        mockRegisterData,
+        'testRequestId',
+        mockRegisterData.registerForm
+      )
     );
     expect(state.registerSending).toBe(false);
   });
 
   it('статус загрузки должен изменяться в начале выполнения запроса checkUserAuth', async () => {
     const state = authReducer(
-      initialState,
+      initialStateAuth,
       checkUserAuth.pending('testRequestId')
     );
     expect(state.checkUserAuthSending).toBe(true);
     expect(state.checkUserAuthError).toBeNull();
   });
   it('сообщение об ошибке должены быть записаны в стейт после выполнения запроса checkUserAuth', async () => {
-    const mockData = new Error('Ошибка запроса');
-
     const state = authReducer(
-      initialState,
-      checkUserAuth.rejected(mockData, 'testRequestId')
+      initialStateAuth,
+      checkUserAuth.rejected(mockErrorData, 'testRequestId')
     );
     expect(state.checkUserAuthSending).toBe(false);
-    expect(state.checkUserAuthError).toBe(mockData.message);
+    expect(state.checkUserAuthError).toBe(mockErrorData.message);
   });
   it('данные должены быть записаны в стейт после выполнения запроса checkUserAuth', async () => {
-    const mockData = {
-      success: true,
-      registerForm: {
-        email: 'test@yandex.ru',
-        password: '123456',
-        name: 'elza'
-      },
-      refreshToken: 'refreshToken',
-      accessToken: 'accessToken',
-      user: {
-        email: 'test@yandex.ru',
-        password: '123456',
-        name: 'elza'
-      }
-    };
-
     const state = authReducer(
-      initialState,
-      checkUserAuth.fulfilled(mockData, 'testRequestId')
+      initialStateAuth,
+      checkUserAuth.fulfilled(mockRegisterData, 'testRequestId')
     );
     expect(state.checkUserAuthSending).toBe(false);
     expect(state.isAuthenticated).toBe(true);
-    expect(state.user).toBe(mockData.user);
+    expect(state.user).toBe(mockRegisterData.user);
   });
 
   it('статус загрузки должен изменяться в начале выполнения запроса updateUser', async () => {
-    const arg = { email: 'test@yandex.ru', password: '123456', name: 'elza' };
     const state = authReducer(
-      initialState,
-      updateUser.pending('testRequestId', arg)
+      initialStateAuth,
+      updateUser.pending('testRequestId', user)
     );
     expect(state.updateUserSending).toBe(true);
     expect(state.updateUserError).toBeNull();
   });
 
   it('сообщение об ошибке должены быть записаны в стейт после выполнения запроса updateUser', async () => {
-    const mockData = new Error('Ошибка запроса');
-    const arg = { email: 'test@yandex.ru', password: '123456', name: 'elza' };
-
     const state = authReducer(
-      initialState,
-      updateUser.rejected(mockData, 'testRequestId', arg)
+      initialStateAuth,
+      updateUser.rejected(mockErrorData, 'testRequestId', user)
     );
     expect(state.updateUserSending).toBe(false);
-    expect(state.updateUserError).toBe(mockData.message);
+    expect(state.updateUserError).toBe(mockErrorData.message);
   });
 
   it('данные должены быть записаны в стейт после выполнения запроса updateUser', async () => {
-    const mockData = {
-      success: true,
-      updateForm: {
-        email: 'test@yandex.ru',
-        password: '123456',
-        name: 'elza'
-      },
-      refreshToken: 'refreshToken',
-      accessToken: 'accessToken',
-      user: {
-        email: 'test@yandex.ru',
-        password: '123456',
-        name: 'elza'
-      }
-    };
-
     const state = authReducer(
-      initialState,
-      updateUser.fulfilled(mockData, 'testRequestId', mockData.updateForm)
+      initialStateAuth,
+      updateUser.fulfilled(
+        mockUpdateData,
+        'testRequestId',
+        mockUpdateData.updateForm
+      )
     );
     expect(state.updateUserSending).toBe(false);
     expect(state.isAuthenticated).toBe(true);
-    expect(state.user).toBe(mockData.user);
+    expect(state.user).toBe(mockUpdateData.user);
   });
 });
 
@@ -392,17 +285,23 @@ describe('проверяем селекторы', () => {
   };
 
   it('селектор отправки возвращает значение sending', () => {
-    const result = sendingSelector({ auth: { ...initialState, ...mockState } });
+    const result = sendingSelector({
+      auth: { ...initialStateAuth, ...mockState }
+    });
     expect(result).toBe(true);
   });
 
   it('sendErrorSelector возвращает значение error', () => {
-    const result = sendErrorSelector({ auth: { ...initialState, ...mockState } });
+    const result = sendErrorSelector({
+      auth: { ...initialStateAuth, ...mockState }
+    });
     expect(result).toBe('Ошибка отправки');
   });
 
   it('authSelector возвращает значение form', () => {
-    const result = authSelector({ auth: { ...initialState, ...mockState } });
+    const result = authSelector({
+      auth: { ...initialStateAuth, ...mockState }
+    });
     expect(result).toEqual({ email: 'test@example.com', password: '12345' });
   });
 });

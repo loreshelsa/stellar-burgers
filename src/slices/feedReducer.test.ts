@@ -1,3 +1,8 @@
+import {
+  initialFeedState,
+  mockErrorData,
+  mockGetFeedsData
+} from '../utils/mockData';
 import { feedReducer, getFeeds } from '../slices/feedReducer';
 import { addOrderNumber } from '../slices/feedReducer';
 import { getFeedsApi, TFeedsResponse } from '@api';
@@ -6,21 +11,10 @@ jest.mock('@api', () => ({
   getFeedsApi: jest.fn()
 }));
 
-const initialState = {
-  feeds: {
-    orders: [],
-    total: 0,
-    totalToday: 0
-  },
-  error: undefined,
-  loading: false,
-  orderNumber: ''
-};
-
 describe('проверяем feedSlice', () => {
   it('должен добавлять номер заказа экшен addOrderNumber', () => {
     const action = { type: addOrderNumber.type, payload: '456111' };
-    const result = feedReducer(initialState, action);
+    const result = feedReducer(initialFeedState, action);
     expect(result.orderNumber).toBe('456111');
   });
 });
@@ -28,7 +22,7 @@ describe('проверяем feedSlice', () => {
 describe('проверяем thunk функцию запрос', () => {
   it('статус загрузки должен изменяться в начале выполнения запроса', async () => {
     const state = feedReducer(
-      initialState,
+      initialFeedState,
       getFeeds.pending('testRequestId', undefined)
     );
     expect(state.loading).toBe(true);
@@ -36,63 +30,26 @@ describe('проверяем thunk функцию запрос', () => {
   });
 
   it('данные должены быть записаны в стейт после выполнения запроса', async () => {
-    const mockData: TFeedsResponse = {
-      success: true,
-      orders: [
-        {
-          _id: '1',
-          status: 'ok',
-          name: 'test',
-          createdAt: 'test',
-          updatedAt: 'test',
-          number: 1,
-          ingredients: ['bun', 'sause']
-        }
-      ],
-      total: 1,
-      totalToday: 1
-    };
-
     const state = feedReducer(
-      initialState,
-      getFeeds.fulfilled(mockData, 'testRequestId')
+      initialFeedState,
+      getFeeds.fulfilled(mockGetFeedsData, 'testRequestId')
     );
     expect(state.loading).toBe(false);
     expect(state.error).toBeUndefined();
-    expect(state.feeds).toEqual(mockData);
+    expect(state.feeds).toEqual(mockGetFeedsData);
   });
 
   it('сообщение об ошибке должены быть записаны в стейт после выполнения запроса', async () => {
-    const mockData = new Error('Ошибка запроса');
-
     const state = feedReducer(
-      initialState,
-      getFeeds.rejected(mockData, 'testRequestId')
+      initialFeedState,
+      getFeeds.rejected(mockErrorData, 'testRequestId')
     );
     expect(state.loading).toBe(false);
-    expect(state.error).toBe(mockData.message);
+    expect(state.error).toBe(mockErrorData.message);
   });
 
   it('запрос должен быть с успешным ответом', async () => {
-    const mockData = [
-      {
-        orders: [
-          {
-            _id: 1,
-            status: 'ok',
-            name: 'test',
-            createdAt: 'test',
-            updatedAt: 'test',
-            number: 1,
-            ingredients: ['bun', 'sause']
-          }
-        ],
-        total: 1,
-        totalToday: 1
-      }
-    ];
-
-    (getFeedsApi as jest.Mock).mockResolvedValue(mockData);
+    (getFeedsApi as jest.Mock).mockResolvedValue(mockGetFeedsData);
 
     const dispatch = jest.fn();
     const getState = jest.fn();
@@ -104,11 +61,11 @@ describe('проверяем thunk функцию запрос', () => {
 
     expect(pending.type).toBe('feed/getAll/pending');
     expect(fulfilled.type).toBe('feed/getAll/fulfilled');
-    expect(fulfilled.payload).toBe(mockData);
+    expect(fulfilled.payload).toBe(mockGetFeedsData);
   });
 
   it('запрос должен быть с отклоненным ответом', async () => {
-    (getFeedsApi as jest.Mock).mockRejectedValue(new Error('Ошибка запроса'));
+    (getFeedsApi as jest.Mock).mockRejectedValue(mockErrorData);
 
     const dispatch = jest.fn();
     const getState = jest.fn();

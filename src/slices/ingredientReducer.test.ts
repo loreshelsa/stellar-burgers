@@ -1,39 +1,19 @@
 import { getIngredientsApi } from '@api';
 import { ingredientReducer, getIngredients } from '../slices/ingredientReducer';
+import {
+  initialIngredientState,
+  mockErrorData,
+  mockIngredientData
+} from '../utils/mockData';
 
 jest.mock('@api', () => ({
   getIngredientsApi: jest.fn()
 }));
 
-const initialState = {
-  ingredients: [],
-  loading: false,
-  error: undefined
-};
-
-const mockData = {
-  success: true,
-  data: [
-    {
-      _id: 'test',
-      name: 'Соус',
-      type: 'sauce',
-      proteins: 2,
-      fat: 2,
-      carbohydrates: 2,
-      calories: 2,
-      price: 2,
-      image: 'test',
-      image_large: 'test',
-      image_mobile: 'test'
-    }
-  ]
-};
-
 describe('проверяем thunk функцию запрос', () => {
   it('статус загрузки должен изменяться при начале выполнения запроса', async () => {
     const state = ingredientReducer(
-      initialState,
+      initialIngredientState,
       getIngredients.pending('testRequestId', undefined)
     );
     expect(state.loading).toBe(true);
@@ -42,27 +22,25 @@ describe('проверяем thunk функцию запрос', () => {
 
   it('данные должены быть записаны в стейт после выполнения запроса', async () => {
     const state = ingredientReducer(
-      initialState,
-      getIngredients.fulfilled(mockData.data, 'testRequestId')
+      initialIngredientState,
+      getIngredients.fulfilled(mockIngredientData.data, 'testRequestId')
     );
     expect(state.loading).toBe(false);
     expect(state.error).toBeUndefined();
-    expect(state.ingredients).toEqual(mockData.data);
+    expect(state.ingredients).toEqual(mockIngredientData.data);
   });
 
   it('сообщение об ошибке должены быть записаны в стейт после выполнения запроса', async () => {
-    const mockData = new Error('Ошибка запроса');
-
     const state = ingredientReducer(
-      initialState,
-      getIngredients.rejected(mockData, 'testRequestId')
+      initialIngredientState,
+      getIngredients.rejected(mockErrorData, 'testRequestId')
     );
     expect(state.loading).toBe(false);
-    expect(state.error).toBe(mockData.message);
+    expect(state.error).toBe(mockErrorData.message);
   });
 
   it('запрос должен быть с успешным ответом', async () => {
-    (getIngredientsApi as jest.Mock).mockResolvedValue(mockData);
+    (getIngredientsApi as jest.Mock).mockResolvedValue(mockIngredientData);
 
     const dispatch = jest.fn();
     const getState = jest.fn();
@@ -75,11 +53,11 @@ describe('проверяем thunk функцию запрос', () => {
     expect(pending.type).toBe('ingredients/getAll/pending');
     expect(fulfilled.type).toBe('ingredients/getAll/fulfilled');
 
-    expect(fulfilled.payload).toBe(mockData);
+    expect(fulfilled.payload).toBe(mockIngredientData);
   });
 
   it('запрос должен быть с отклоненным ответом', async () => {
-    (getIngredientsApi as jest.Mock).mockRejectedValue(new Error('Ошибка запроса'));
+    (getIngredientsApi as jest.Mock).mockRejectedValue(mockErrorData);
 
     const dispatch = jest.fn();
     const getState = jest.fn();
@@ -91,6 +69,6 @@ describe('проверяем thunk функцию запрос', () => {
 
     expect(pending.type).toBe('ingredients/getAll/pending');
     expect(rejected.type).toBe('ingredients/getAll/rejected');
-    expect(rejected.error.message).toBe('Ошибка запроса');
+    expect(rejected.error.message).toBe(mockErrorData.message);
   });
 });
