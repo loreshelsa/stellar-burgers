@@ -43,6 +43,25 @@ describe('Проверка добавления ингредиентов', () =>
   });
 });
 
+describe('Проверка крайнего случая', () => {
+  it('нельзя оформить заказ если пользователь не залогинен', () => {
+    cy.intercept('GET', '**/api/ingredients').as('getIngredients');
+    cy.visit('http://localhost:4000');
+    cy.wait('@getIngredients');
+    cy.get('[data-testid="ingredient-list"]').should('be.visible');
+    cy.contains('Краторная булка N-200i')
+      .parent('li')
+      .children('[type=button]')
+      .click();
+    cy.contains('Биокотлета из марсианской Магнолии')
+      .parent('li')
+      .children('[type=button]')
+      .click();
+    cy.contains('Оформить заказ').click();
+    cy.contains('Вход').should('be.visible');
+  });
+});
+
 describe('Проверка открытия модального окна', () => {
   beforeEach(() => {
     cy.fixture('ingredients.json').then((mockData: any) => {
@@ -74,6 +93,12 @@ describe('Проверка открытия модального окна', () =
     });
     cy.get('[data-testid="modal"]').should('not.exist');
   });
+  it('закрытие по Esс', () => {
+    cy.contains('Краторная булка N-200i').click();
+    cy.get('[data-testid="modal"]').should('be.visible');
+    cy.get('body').type('{esc}');
+    cy.get('[data-cy="modal-ingredient"]').should('not.exist');
+  });
 });
 
 describe('Проверка создания заказа', () => {
@@ -100,6 +125,14 @@ describe('Проверка создания заказа', () => {
       }
     });
     cy.wait('@userData');
+  });
+
+  afterEach(() => {
+    cy.window().then((win) => {
+      win.localStorage.removeItem('accessToken');
+      win.localStorage.removeItem('refreshToken');
+    });
+    cy.clearCookie('accessToken');
   });
 
   it('должен корректно отобразить имя пользователя', () => {
